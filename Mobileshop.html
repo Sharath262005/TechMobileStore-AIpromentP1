@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechMobile Store - Billing System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px; text-align: center; }
+        .header h1 { font-size: 2.2rem; margin-bottom: 8px; }
+        .tabs { display: flex; background: #f8f9fa; }
+        .tab { flex: 1; padding: 12px 15px; background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s; }
+        .tab.active { background: white; color: #2a5298; border-bottom: 3px solid #2a5298; }
+        .tab:hover { background: rgba(42,82,152,0.1); }
+        .tab-content { display: none; padding: 25px; }
+        .tab-content.active { display: block; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; margin-bottom: 6px; color: #333; }
+        .form-group input, .form-group select, .form-group textarea { padding: 10px; border: 2px solid #e9ecef; border-radius: 6px; font-size: 14px; transition: border-color 0.3s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #2a5298; }
+        .error { color: #dc3545; font-size: 12px; margin-top: 4px; }
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .mobile-card { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s; }
+        .mobile-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #2a5298; }
+        .mobile-card.selected { border-color: #28a745; background: rgba(40,167,69,0.05); }
+        .mobile-card.out-of-stock { opacity: 0.6; background: rgba(220,53,69,0.05); }
+        .mobile-brand { font-size: 16px; font-weight: 700; color: #2a5298; margin-bottom: 6px; }
+        .mobile-model { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .mobile-specs { font-size: 12px; color: #666; margin-bottom: 12px; }
+        .mobile-price { font-size: 18px; font-weight: 700; color: #28a745; margin-bottom: 8px; }
+        .stock-status { padding: 3px 10px; border-radius: 15px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .in-stock { background: rgba(40,167,69,0.1); color: #28a745; }
+        .out-of-stock { background: rgba(220,53,69,0.1); color: #dc3545; }
+        .low-stock { background: rgba(255,193,7,0.1); color: #ffc107; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; margin: 4px; }
+        .btn-primary { background: #2a5298; color: white; }
+        .btn-primary:hover { background: #1e3c72; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .bill-section { background: white; border: 2px solid #e9ecef; border-radius: 10px; padding: 25px; margin: 15px 0; }
+        .bill-header { text-align: center; border-bottom: 2px solid #2a5298; padding-bottom: 15px; margin-bottom: 25px; }
+        .bill-details { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+        .bill-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .bill-table th, .bill-table td { padding: 10px; text-align: left; border-bottom: 1px solid #e9ecef; }
+        .bill-table th { background: #f8f9fa; font-weight: 600; }
+        .bill-total { text-align: right; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px; }
+        .total-row { display: flex; justify-content: space-between; margin: 6px 0; font-size: 14px; }
+        .grand-total { font-size: 18px; font-weight: 700; color: #2a5298; border-top: 2px solid #2a5298; padding-top: 8px; }
+        .payment-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 15px 0; }
+        .payment-method { padding: 12px; border: 2px solid #e9ecef; border-radius: 6px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .payment-method:hover, .payment-method.selected { border-color: #2a5298; background: rgba(42,82,152,0.05); }
+        .service-history { background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 15px 0; }
+        .service-record { background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 4px solid #2a5298; }
+        .delivery-info { background: rgba(255,193,7,0.1); border: 2px solid #ffc107; border-radius: 6px; padding: 15px; margin: 15px 0; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); background: white; padding: 25px; border-radius: 10px; max-width: 400px; width: 90%; }
+        @media (max-width: 768px) { .form-grid, .inventory-grid, .bill-details { grid-template-columns: 1fr; } .tabs { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 TechMobile Store</h1>
+            <p>Professional Mobile Billing System</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('inventory')">📱 Inventory</button>
+            <button class="tab" onclick="switchTab('customer')">👤 Customer</button>
+            <button class="tab" onclick="switchTab('billing')">💳 Billing</button>
+            <button class="tab" onclick="switchTab('payment')">💰 Payment</button>
+            <button class="tab" onclick="switchTab('history')">📋 History</button>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="inventory" class="tab-content active">
+            <h2>📱 Available Mobiles</h2>
+            <div class="inventory-grid" id="inventoryGrid"></div>
+            <div id="deliveryInfo" class="delivery-info" style="display: none;">
+                <h3>📦 Delivery Information</h3>
+                <p id="deliveryMessage"></p>
+                <div class="form-group">
+                    <label>Expected Delivery Date:</label>
+                    <input type="date" id="deliveryDate">
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Tab -->
+        <div id="customer" class="tab-content">
+            <h2>👤 Customer Information</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Customer Name *</label>
+                    <input type="text" id="customerName" required>
+                    <div class="error" id="nameError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Age *</label>
+                    <input type="number" id="customerAge" min="1" max="120" required>
+                    <div class="error" id="ageError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="customerPhone" required>
+                    <div class="error" id="phoneError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" id="customerEmail" required>
+                    <div class="error" id="emailError"></div>
+                </div>
+            </div>
+
+            <h3>📮 Addresses</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Billing Address</label>
+                    <textarea id="billingAddress" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Shipping Address</label>
+                    <textarea id="shippingAddress" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="city">
+                </div>
+                <div class="form-group">
+                    <label>ZIP Code</label>
+                    <input type="text" id="zip">
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="validateCustomer()">Validate Customer ✓</button>
+        </div>
+
+        <!-- Billing Tab -->
+        <div id="billing" class="tab-content">
+            <div class="bill-section">
+                <div class="bill-header">
+                    <h2>📄 INVOICE</h2>
+                    <p>Invoice #: <span id="invoiceNumber"></span></p>
+                    <p>Date: <span id="invoiceDate"></span></p>
+                </div>
+
+                <div class="bill-details">
+                    <div>
+                        <h3>🏪 Store Information</h3>
+                        <p><strong>TechMobile Store</strong></p>
+                        <p>123 Technology Street</p>
+                        <p>Digital City, TC 12345</p>
+                        <p>Phone: +1-555-TECH-MOB</p>
+                        <p>GST: 22AAAAA0000A1Z5</p>
+                    </div>
+                    <div id="customerBillInfo">
+                        <h3>👤 Customer Information</h3>
+                    </div>
+                </div>
+
+                <div class="bill-items">
+                    <h3>📱 Items Purchased</h3>
+                    <table class="bill-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Specifications</th>
+                                <th>Price</th>
+                                <th>GST</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="bill-total" id="billTotalSection"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="generateBill()">Generate Bill 📄</button>
+            <button class="btn btn-success" onclick="saveBill()">Save Bill 💾</button>
+            <button class="btn btn-primary" onclick="exportBill()">Export PDF 📋</button>
+        </div>
+
+        <!-- Payment Tab -->
+        <div id="payment" class="tab-content">
+            <h2>💰 Payment Processing</h2>
+            
+            <div class="payment-methods">
+                <div class="payment-method" onclick="selectPaymentMethod('cash')">
+                    <h3>💵 Cash</h3>
+                </div>
+                <div class="payment-method" onclick="selectPaymentMethod('card')">
+                    <h3>💳 Card</h3>
+                </div>
+                <div class="payment-method" onclick="selectPaymentMethod('upi')">
+                    <h3>📱 UPI</h3>
+                </div>
+                <div class="payment-method" onclick="selectPaymentMethod('emi')">
+                    <h3>📊 EMI</h3>
+                </div>
+            </div>
+
+            <div id="paymentDetails" style="display: none;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Amount to Pay</label>
+                        <input type="text" id="paymentAmount" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <input type="text" id="selectedPaymentMethod" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emiDetails" style="display: none;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>EMI Duration</label>
+                        <select id="emiDuration">
+                            <option value="3">3 Months</option>
+                            <option value="6">6 Months</option>
+                            <option value="12">12 Months</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly EMI</label>
+                        <input type="text" id="monthlyEmi" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="processPayment()">Process Payment 💳</button>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history" class="tab-content">
+            <h2>📋 Service History</h2>
+            <div class="service-history" id="serviceHistory"></div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Message</h3>
+            <p id="modalMessage"></p>
+            <button class="btn btn-primary" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedMobile = null;
+        let customerData = {};
+        let currentBill = null;
+        let serviceHistory = [];
+        let selectedPaymentMethod = '';
+
+        // Mobile inventory
+        const mobileInventory = [
+            {
+                id: 1, brand: "Samsung", model: "Galaxy S24 Ultra", processor: "Snapdragon 8 Gen 3",
+                storage: "256GB", battery: "5000mAh", screenRes: "3088x1440", networkType: "5G",
+                price: 120000, stock: 5, warranty: "2 years", insurance: "1 year",
+                features: ["S-Pen", "120Hz", "200MP Camera", "IP68"]
+            },
+            {
+                id: 2, brand: "iPhone", model: "15 Pro Max", processor: "A17 Pro",
+                storage: "512GB", battery: "4441mAh", screenRes: "2796x1290", networkType: "5G",
+                price: 150000, stock: 0, warranty: "1 year", insurance: "1 year",
+                features: ["Dynamic Island", "ProRAW", "Action Button", "Titanium"]
+            },
+            {
+                id: 3, brand: "OnePlus", model: "12 Pro", processor: "Snapdragon 8 Gen 3",
+                storage: "512GB", battery: "5400mAh", screenRes: "3168x1440", networkType: "5G",
+                price: 65000, stock: 2, warranty: "1 year", insurance: "6 months",
+                features: ["100W Charging", "Hasselblad", "120Hz AMOLED"]
+            }
+        ];
+
+        // Initialize app
+        function init() {
+            loadInventory();
+            generateInvoiceNumber();
+            updateServiceHistory();
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Load inventory
+        function loadInventory() {
+            const grid = document.getElementById('inventoryGrid');
+            grid.innerHTML = '';
+            
+            mobileInventory.forEach(mobile => {
+                const card = document.createElement('div');
+                card.className = `mobile-card ${mobile.stock === 0 ? 'out-of-stock' : ''}`;
+                card.onclick = () => selectMobile(mobile);
+
+                const stockClass = mobile.stock === 0 ? 'out-of-stock' : mobile.stock < 3 ? 'low-stock' : 'in-stock';
+                const stockText = mobile.stock === 0 ? 'Out of Stock' : mobile.stock < 3 ? 'Low Stock' : 'In Stock';
+
+                card.innerHTML = `
+                    <div class="mobile-brand">${mobile.brand}</div>
+                    <div class="mobile-model">${mobile.model}</div>
+                    <div class="mobile-specs">
+                        <strong>CPU:</strong> ${mobile.processor}<br>
+                        <strong>Storage:</strong> ${mobile.storage}<br>
+                        <strong>Battery:</strong> ${mobile.battery}<br>
+                        <strong>Screen:</strong> ${mobile.screenRes}<br>
+                        <strong>Network:</strong> ${mobile.networkType}<br>
+                        <strong>Features:</strong> ${mobile.features.join(', ')}
+                    </div>
+                    <div class="mobile-price">₹${mobile.price.toLocaleString()}</div>
+                    <div class="stock-status ${stockClass}">${stockText} (${mobile.stock})</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Select mobile
+        function selectMobile(mobile) {
+            document.querySelectorAll('.mobile-card').forEach(c => c.classList.remove('selected'));
+            
+            if (mobile.stock === 0) {
+                showDeliveryInfo(mobile);
+                return;
+            }
+
+            event.currentTarget.classList.add('selected');
+            selectedMobile = mobile;
+            document.getElementById('deliveryInfo').style.display = 'none';
+            showMessage('Success', `Selected: ${mobile.brand} ${mobile.model}`);
+        }
+
+        // Show delivery info
+        function showDeliveryInfo(mobile) {
+            const deliveryDate = new Date();
+            deliveryDate.setDate(deliveryDate.getDate() + 7);
+            
+            document.getElementById('deliveryMessage').innerHTML = `
+                <strong>${mobile.brand} ${mobile.model}</strong> is out of stock.<br>
+                Delivery in 7-10 days: <strong>${deliveryDate.toDateString()}</strong>
+            `;
+            document.getElementById('deliveryDate').value = deliveryDate.toISOString().split('T')[0];
+            document.getElementById('deliveryInfo').style.display = 'block';
+        }
+
+        // Validate customer
+        function validateCustomer() {
+            const name = document.getElementById('customerName').value.trim();
+            const age = parseInt(document.getElementById('customerAge').value);
+            const phone = document.getElementById('customerPhone').value.trim();
+            const email = document.getElementById('customerEmail').value.trim();
+
+            clearErrors();
+            let isValid = true;
+
+            if (!name) { showError('nameError', 'Name required'); isValid = false; }
+            if (!age || age < 18) { showError('ageError', 'Must be 18+ years old'); isValid = false; }
+            if (!phone || phone.length < 10) { showError('phoneError', 'Valid phone required'); isValid = false; }
+            if (!email || !email.includes('@')) { showError('emailError', 'Valid email required'); isValid = false; }
+
+            if (isValid) {
+                customerData = { name, age, phone, email,
+                    billingAddress: document.getElementById('billingAddress').value,
+                    shippingAddress: document.getElementById('shippingAddress').value,
+                    city: document.getElementById('city').value,
+                    zip: document.getElementById('zip').value
+                };
+                showMessage('Success', 'Customer validated successfully! ✅');
+            }
+        }
+
+        // Generate invoice number
+        function generateInvoiceNumber() {
+            const date = new Date();
+            const num = 'INV-' + date.getFullYear() + String(date.getMonth()+1).padStart(2,'0') + 
+                       String(date.getDate()).padStart(2,'0') + '-' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
+            document.getElementById('invoiceNumber').textContent = num;
+            document.getElementById('invoiceDate').textContent = date.toLocaleDateString();
+        }
+
+        // Generate bill
+        function generateBill() {
+            if (!selectedMobile) { showMessage('Error', 'Please select a mobile first'); return; }
+            if (!customerData.name) { showMessage('Error', 'Please validate customer first'); return; }
+
+            document.getElementById('customerBillInfo').innerHTML = `
+                <h3>👤 Customer</h3>
+                <p><strong>${customerData.name}</strong></p>
+                <p>Age: ${customerData.age}</p>
+                <p>Phone: ${customerData.phone}</p>
+                <p>Email: ${customerData.email}</p>
+                <p>${customerData.billingAddress}</p>
+                <p>${customerData.city}, ${customerData.zip}</p>
+            `;
+
+            const gstRate = 0.18;
+            const gstAmount = selectedMobile.price * gstRate;
+            const totalAmount = selectedMobile.price + gstAmount;
+
+            document.getElementById('billTableBody').innerHTML = `
+                <tr>
+                    <td><strong>${selectedMobile.brand} ${selectedMobile.model}</strong><br>
+                        <small>IMEI: ${generateIMEI()}</small></td>
+                    <td>${selectedMobile.processor}<br>${selectedMobile.storage}<br>
+                        ${selectedMobile.battery}<br>${selectedMobile.screenRes}<br>
+                        ${selectedMobile.networkType}<br>Warranty: ${selectedMobile.warranty}<br>
+                        Insurance: ${selectedMobile.insurance}</td>
+                    <td>₹${selectedMobile.price.toLocaleString()}</td>
+                    <td>₹${gstAmount.toLocaleString()}</td>
+                    <td>₹${totalAmount.toLocaleString()}</td>
+                </tr>
+            `;
+
+            document.getElementById('billTotalSection').innerHTML = `
+                <div class="total-row"><span>Subtotal:</span><span>₹${selectedMobile.price.toLocaleString()}</span></div>
+                <div class="total-row"><span>GST (18%):</span><span>₹${gstAmount.toLocaleString()}</span></div>
+                <div class="total-row grand-total"><span>Total:</span><span>₹${totalAmount.toLocaleString()}</span></div>
+            `;
+
+            currentBill = {
+                invoiceNumber: document.getElementById('invoiceNumber').textContent,
+                date: new Date(), customer: customerData, mobile: selectedMobile,
+                gstAmount, totalAmount, imei: generateIMEI()
+            };
+
+            document.getElementById('paymentAmount').value = '₹' + totalAmount.toLocaleString();
+            showMessage('Success', 'Bill generated successfully! 📄');
+        }
+
+        // Generate IMEI
+        function generateIMEI() {
+            let imei = '';
+            for (let i = 0; i < 15; i++) imei += Math.floor(Math.random() * 10);
+            return imei;
+        }
+
+        // Save bill
+        function saveBill() {
+            if (!currentBill) { showMessage('Error', 'Generate bill first'); return; }
+            
+            serviceHistory.push({
+                date: new Date(), type: 'Purchase',
+                details: `${selectedMobile.brand} ${selectedMobile.model}`,
+                amount: currentBill.totalAmount,
+                invoiceNumber: currentBill.invoiceNumber
+            });
+            updateServiceHistory();
+            showMessage('Success', 'Bill saved successfully! 💾');
+        }
+
+        // Export bill
+        function exportBill() {
+            if (!currentBill) { showMessage('Error', 'Generate bill first'); return; }
+            window.print();
+            showMessage('Success', 'Bill exported successfully! 📋');
+        }
+
+        // Select payment method
+        function selectPaymentMethod(method) {
+            document.querySelectorAll('.payment-method').forEach(p => p.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            selectedPaymentMethod = method;
+            
+            document.getElementById('selectedPaymentMethod').value = method.toUpperCase();
+            document.getElementById('paymentDetails').style.display = 'block';
+            
+            if (method === 'emi') {
+                document.getElementById('emiDetails').style.display = 'block';
+                calculateEMI();
+            } else {
+                document.getElementById('emiDetails').style.display = 'none';
+            }
+        }
+
+        // Calculate EMI
+        function calculateEMI() {
+            const duration = document.getElementById('emiDuration').value;
+            const amount = currentBill ? currentBill.totalAmount : 0;
+            const monthlyRate = 0.12 / 12;
+            const emi = (amount * monthlyRate * Math.pow(1 + monthlyRate, duration)) / 
+                       (Math.pow(1 + monthlyRate, duration) - 1);
+            document.getElementById('monthlyEmi').value = '₹' + Math.round(emi).toLocaleString();
+        }
+
+        // Process payment
+        function processPayment() {
+            if (!currentBill) { showMessage('Error', 'Generate bill first'); return; }
+            if (!selectedPaymentMethod) { showMessage('Error', 'Select payment method'); return; }
+
+            showMessage('Processing', 'Processing payment...');
+            
+            setTimeout(() => {
+                const mobileIndex = mobileInventory.findIndex(m => m.id === selectedMobile.id);
+                if (mobileIndex !== -1) mobileInventory[mobileIndex].stock--;
+                
+                serviceHistory.push({
+                    date: new Date(), type: 'Payment',
+                    details: `₹${currentBill.totalAmount.toLocaleString()} via ${selectedPaymentMethod.toUpperCase()}`,
+                    amount: currentBill.totalAmount,
+                    invoiceNumber: currentBill.invoiceNumber
+                });
+                
+                updateServiceHistory();
+                loadInventory();
+                showMessage('Success', `Payment processed successfully! 💳`);
+                resetTransaction();
+            }, 2000);
+        }
+
+        // Reset transaction
+        function resetTransaction() {
+            selectedMobile = null;
+            customerData = {};
+            currentBill = null;
+            selectedPaymentMethod = '';
+            
+            document.querySelectorAll('input, textarea, select').forEach(i => {
+                if (i.type !== 'checkbox') i.value = '';
+            });
+            document.querySelectorAll('.mobile-card, .payment-method').forEach(e => e.classList.remove('selected'));
+            document.getElementById('paymentDetails').style.display = 'none';
+            document.getElementById('emiDetails').style.display = 'none';
+            document.getElementById('deliveryInfo').style.display = 'none';
+            generateInvoiceNumber();
+            switchTab('inventory');
+        }
+
+        // Update service history
+        function updateServiceHistory() {
+            const historyDiv = document.getElementById('serviceHistory');
+            if (serviceHistory.length === 0) {
+                historyDiv.innerHTML = '<p>No service history available.</p>';
+                return;
+            }
+            
+            historyDiv.innerHTML = serviceHistory.map(record => `
+                <div class="service-record">
+                    <div style="display: flex; justify-content: space-between;">
+                        <div><strong>${record.type}</strong> - ${record.details}
+                            ${record.invoiceNumber ? `<br><small>Invoice: ${record.invoiceNumber}</small>` : ''}</div>
+                        <div style="text-align: right;">
+                            <div><strong>₹${record.amount.toLocaleString()}</strong></div>
+                            <small>${record.date.toLocaleDateString()}</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Utility functions
+        function showMessage(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error').forEach(e => e.textContent = '');
+        }
+
+        // Event listeners
+        document.getElementById('emiDuration').addEventListener('change', calculateEMI);
+        
+        // Close modal on outside click
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) closeModal();
+        });
+
+        // Initialize app when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
